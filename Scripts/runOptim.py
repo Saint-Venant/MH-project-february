@@ -12,6 +12,9 @@ from Parse_instance import readOutput
 from Parse_instance import displaySolution
 
 instanceName = 'captANOR225_9_20'
+#instanceName = 'captGRID100_10_10'
+#instanceName = 'captANOR900_15_20'
+#instanceName = 'captANOR1500_21_500'
 instanceDir = '../Instances/'
 instancePath = instanceDir + instanceName + '.dat'
 

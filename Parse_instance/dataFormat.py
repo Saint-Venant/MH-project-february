@@ -64,7 +64,6 @@ class DataFormat:
         with open(file, 'w') as f:
             f.write(self.content)
 
-# ---- should maybe be removed ! ---
 def buildEdges(NeighCom, upperBound, fixedVertices):
     '''
     Create the edges for input to the solver
@@ -81,27 +80,31 @@ def buildEdges(NeighCom, upperBound, fixedVertices):
     while len(file) > 0:
         i = file[0]
         file = file[1:]
-        v = NeighCom[i][1]
+        v = NeighCom[i]
         for j in v:
             if (fixedVertices[j] == 1) and (explored[j] == 0):
-                if i < j:
-                    e = (nbEdges, i, j, M)
+                # necessarily i!=j
+                if i == 0:
+                    edges.append((nbEdges, j, i, M))
+                    nbEdges += 1
+                    M -= 1
                 else:
-                    assert(j < i)
-                    e = (nbEdges, j, i, M)
-                edges.append(e)
-                nbEdges += 1
+                    # necessarily j!=0
+                    edges += [(nbEdges, i, j, M), (nbEdges+1, j, i, M-1)]
+                    nbEdges += 2
+                    M -= 2
                 explored[j] = 1
                 file.append(j)
-                M -= 1
 
     # other edges
     for i in range(n):
-        v = NeighCom[i][1]
-        for j in v:
-            if (i < j) and (fixedVertices[i] + fixedVertices[j] < 2):
-                edges.append((nbEdges, i, j, M))
-                nbEdges += 1
+        if fixedVertices[i] != 0:
+            v = NeighCom[i]
+            for j in v:
+                if (i > 0) and (j != i) and (fixedVertices[j] != 0) and \
+                   (fixedVertices[i] + fixedVertices[j] < 2):
+                    edges.append((nbEdges, i, j, M))
+                    nbEdges += 1
 
     return edges
 
@@ -122,19 +125,18 @@ def writeData(instanceName, NeighCapt, NeighCom, upperBound, dataDir='./'):
     # -> add fixedVertices to the arguments
     #fixedTo0 = list(np.where(fixedVertices == 0)[0])
     #fixedTo1 = list(np.where(fixedVertices == 1)[0])
+    fixedVertices = -1*np.ones(n, dtype=np.int)
+    fixedVertices[0] = 1
 
     # build edges (in Com graph)
-    #edges = buildEdges(NeighCom, upperBound, fixedVertices)
-
-    # modify NeighCapt to include each vertex in its neighbors
-    #NeighCaptLarge = [[i] + NeighCapt[i][1] for i in range(len(NeighCapt))]
+    edges = buildEdges(NeighCom, upperBound, fixedVertices)
 
     # create the .dat file
     File.appendSet('vertices', vertices)
     File.appendSet('targets', targets)
     #File.appendSet('fixedTo0', fixedTo0)
     #File.appendSet('fixedTo1', fixedTo1)
-    #File.appendTupleSet('edges', edges)
+    File.appendTupleSet('edges', edges)
     File.appendTabSet('NeighCapt', NeighCapt)
 
     File.exportFile()
@@ -147,6 +149,7 @@ if __name__ == '__main__':
     
     Rcapt = 1
     Rcom = 2
+    #instanceName = 'captGRID100_10_10'
     instanceName = 'captANOR225_9_20'
     instanceDir = '../Instances/{}.dat'.format(instanceName)
 
