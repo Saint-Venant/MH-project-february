@@ -8,7 +8,7 @@
 {int} vertices = ...; // all vertices
 {int} targets = ...; // targets = all vertices except sink (sink=0)
 
-{int} NeighCaptLarge[vertices] = ...; // for each vertex i, gives all the vertices at a distance <= Rcapt
+{int} NeighCapt[vertices] = ...; // for each vertex i, gives all the vertices at a distance <= Rcapt
 
 // fixed vertices
 //{int} fixedTo0 = ...;
@@ -21,7 +21,7 @@ dvar float+ f[targets][vertices];
 minimize sum(i in targets) select[i];
 
 subject to {
-  ctCover: forall(i in targets) sum(j in NeighCaptLarge[i] : j > 0) select[j] >= 1;
+  ctCover: forall(i in targets) sum(j in NeighCapt[i] : j > 0) select[j] >= 1;
 }
 
 

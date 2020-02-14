@@ -1,3 +1,9 @@
 /OPL_flow/*.oplproject
 /OPL_flow/*.project
 /OPL_flow/*.dat
+
+/Instances/
+
+__pycache__/
+
+/Parse_instance/*.dat
