@@ -1,9 +1,9 @@
 import numpy as np
 
 
-def readInstance(instanceName):
+def readInstance(instancePath):
     '''
-    instanceName : path to the instance (a .dat file)
+    instancePath : path to the instance (a .dat file)
 
     Return a list of n elements:
         n = number of vertices
@@ -12,7 +12,7 @@ def readInstance(instanceName):
             x, y : coordinates (float)
     '''
     instance = []
-    for line in open(instanceName):
+    for line in open(instancePath):
         row = line.split()
         tmp = [int(row[0])] + [float(x) for x in row[1:]]
         instance.append(tmp)
@@ -68,7 +68,7 @@ def make_Neigh(Adj):
         Neigh.append(v)
     return Neigh
 
-def parseData(instanceName, Rcapt, Rcom):
+def parseData(instancePath, Rcapt, Rcom):
     '''
     instanceName : path to the instance .dat file
     Rcapt, Rcom : 2 integers
@@ -76,7 +76,7 @@ def parseData(instanceName, Rcapt, Rcom):
     Do all the pre-computation before running any metaheuristic
     Compute matrices of adjacency and lists of neigbors
     '''
-    instance = readInstance(instanceName)
+    instance = readInstance(instancePath)
     Acapt = make_Adj(instance, Rcapt, adjType='Capt')
     Acom = make_Adj(instance, Rcom, adjType='Com')
     NeighCapt = make_Neigh(Acapt)
@@ -84,7 +84,7 @@ def parseData(instanceName, Rcapt, Rcom):
     return Acapt, Acom, NeighCapt, NeighCom
 
 if __name__ == '__main__':
-    instanceName = '../Instances/captANOR225_9_20.dat'
+    instancePath = '../Instances/captANOR225_9_20.dat'
     Rcapt = 1
     Rcom = 2
-    Acapt, Acom, NeighCapt, NeighCom = parseData(instanceName, Rcapt, Rcom)
+    Acapt, Acom, NeighCapt, NeighCom = parseData(instancePath, Rcapt, Rcom)

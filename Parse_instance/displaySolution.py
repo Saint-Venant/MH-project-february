@@ -1,10 +1,13 @@
 '''
 Display a solution on a map
 '''
+import sys
+sys.path.append('../')
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-import parserInstance
+from Parse_instance import parserInstance
 
 
 def display(instancePath, Rcapt, Rcom, solution, score):
