@@ -8,6 +8,7 @@ class OutputFile:
         self.status = -1
         self.value = -1
         self.select = -1
+        self.solvingTime = -1
         self.loadData()
 
     def loadData(self):
@@ -39,6 +40,9 @@ class OutputFile:
                 row += 1
             self.select = select
 
+            row += 1
+            self.solvingTime = int(content[row].split(' = ')[1][:-2])
+
 
 
 
@@ -50,3 +54,4 @@ if __name__ == '__main__':
     print('value = ', output.value, '\n')
     print('select = ', output.select, '\n')
     print('nb nodes = ', len(output.select), '\n')
+    print('solving time = ', output.solvingTime, '\n')
