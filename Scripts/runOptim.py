@@ -21,9 +21,10 @@ instancePath = instanceDir + instanceName + '.dat'
 oplDir = '../OPL_flow/'
 oplModel = 'february_flow_linear'
 oplModelPath = oplDir + oplModel + '.mod'
+modelType = 'full'
 
 Rcapt = 1
-Rcom = 2
+Rcom = 1
 
 # parse data
 Acapt, Acom, NeighCapt, NeighCom = parserInstance.parseData(
@@ -33,8 +34,9 @@ Acapt, Acom, NeighCapt, NeighCom = parserInstance.parseData(
 M = 100
 
 # build a file instance
-oplInstanceFile = dataFormat.writeData(instanceName, NeighCapt, NeighCom, M, \
-                                       dataDir=oplDir)
+oplInstanceFile = dataFormat.writeData(
+    instanceName, NeighCapt, NeighCom, M, \
+    modelType=modelType, dataDir=oplDir)
 
 # run OPL for optim
 os.system('oplrun.exe {} {}'.format(oplModelPath, oplInstanceFile))
@@ -48,6 +50,6 @@ shutil.move(oplDir+'output.dat', 'output.dat')
 # read output
 output = readOutput.OutputFile()
 solution = np.array([1] + output.select)
-score = output.value
+score = output.bestInteger
 displaySolution.display(instancePath, Rcapt, Rcom, solution, score)
 plt.show()
