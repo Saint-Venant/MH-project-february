@@ -44,6 +44,12 @@ subject to {
   ctFlowConservation: forall(i in targets) sum(<e, i, j, M> in edges) f[<e>] - sum(<e, j, i, M> in edges) f[<e>] == select[i];
 }
 
+main {
+	thisOplModel.generate();
+	cplex.tilim = 30;
+	cplex.solve();
+	thisOplModel.postProcess();
+}
 
 float value = sum(i in targets) select[i];
 

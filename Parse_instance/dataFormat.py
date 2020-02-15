@@ -108,10 +108,13 @@ def buildEdges(NeighCom, upperBound, fixedVertices):
 
     return edges
 
-def writeData(instanceName, NeighCapt, NeighCom, upperBound, dataDir='./'):
+def writeData(instanceName, NeighCapt, NeighCom, upperBound, \
+              dataDir='./', modelType='full'):
     '''
     Write data into the corresponding directory
     '''
+    assert(modelType in ['full', 'cover'])
+    
     # build a file instance
     fileName = 'OPL_{}.dat'.format(instanceName)
     File = DataFormat(fileName, dataDir)
@@ -136,7 +139,8 @@ def writeData(instanceName, NeighCapt, NeighCom, upperBound, dataDir='./'):
     File.appendSet('targets', targets)
     #File.appendSet('fixedTo0', fixedTo0)
     #File.appendSet('fixedTo1', fixedTo1)
-    File.appendTupleSet('edges', edges)
+    if modelType == 'full':
+        File.appendTupleSet('edges', edges)
     File.appendTabSet('NeighCapt', NeighCapt)
 
     File.exportFile()
@@ -153,6 +157,9 @@ if __name__ == '__main__':
     instanceName = 'captANOR225_9_20'
     instanceDir = '../Instances/{}.dat'.format(instanceName)
 
+    # model
+    modelType = 'full'
+
     # parse data
     Acapt, Acom, NeighCapt, NeighCom = parserInstance.parseData(
         instanceDir, Rcapt, Rcom)
@@ -162,4 +169,5 @@ if __name__ == '__main__':
     M = 100
 
     # build a file instance
-    output = writeData(instanceName, NeighCapt, NeighCom, M)
+    output = writeData(instanceName, NeighCapt, NeighCom, M, \
+                       modelType=modelType)

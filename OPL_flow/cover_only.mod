@@ -4,7 +4,7 @@
  * Creation Date: 14 févr. 2020 at 19:19:08
  *********************************************/
 
- float startTime;
+float startTime;
 execute {
 	var startDate = new Date();
 	startTime = startDate.getTime();
@@ -25,6 +25,12 @@ subject to {
   ctCover: forall(i in targets) sum(j in NeighCapt[i] : j > 0) select[j] >= 1;
 }
 
+main {
+	thisOplModel.generate();
+	cplex.tilim = 30;
+	cplex.solve();
+	thisOplModel.postProcess();
+}
 
 float value = sum(i in targets) select[i];
 
