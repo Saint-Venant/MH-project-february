@@ -4,6 +4,7 @@ sys.path.append('../')
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas
 
 from Parse_instance.readOutput import OutputFile
 
@@ -23,6 +24,18 @@ class BacktestData:
         self.results = [x for x in os.listdir(backtestDir) if '.dat' in x]
         self.outputs = [OutputFile(outputFileName=x, outputDir=backtestDir) \
                         for x in self.results]
+        self.df = pandas.DataFrame(data={
+            'instanceName': [x.fileName.split('RESULTS_')[1].split('.dat')[0] \
+                             for x in self.outputs],
+            'status': [x.status for x in self.outputs],
+            'gap': [x.gap for x in self.outputs],
+            'bestInteger': [x.bestInteger for x in self.outputs],
+            'infBound': [x.infBound for x in self.outputs],
+            'solvingTime': [x.solvingTime for x in self.outputs]}
+        )
+
+        # sort dataframe by increasing gap
+        self.df.sort_values(by='gap', inplace=True)
 
     def readInfo(self):
         with open(self.backtestDir + 'info.txt', 'r') as f:
@@ -34,8 +47,7 @@ class BacktestData:
 
     def plotPerformance(self):
         # get solving times (transform convert milliseconds to seconds)
-        solvingTimes = [x.solvingTime/1000 for x in self.outputs \
-                        if x.status == 1]
+        solvingTimes = list(self.df[self.df['status'] == 1]['solvingTime']/1000)
         solvingTimes = np.sort(solvingTimes)
         nbSolved = len(solvingTimes)
 
@@ -55,10 +67,25 @@ class BacktestData:
                 'Model type : {}\nRcapt = {}, Rcom = {}'
         plt.title(title.format(self.modelType, self.Rcapt, self.Rcom))
 
+    def plotGap(self):
+        #plt.figure('Gap')
+        plt.subplots(num='Gap')
+        plt.plot(self.df['instanceName'], self.df['gap'])
+        plt.xticks(rotation=45, horizontalalignment='right', fontsize=6)
+        plt.xlabel('Instance')
+        plt.ylabel('Gap')
+        title = 'Gap for each instance\n' + \
+                'Model type : {}\nRcapt = {}, Rcom = {}'
+        plt.title(title.format(self.modelType, self.Rcapt, self.Rcom))
+        plt.subplots_adjust(bottom=0.25, top=0.85)
+
 
 if __name__ == '__main__':
     backtestDir = './backtest_full12/'
     data = BacktestData(backtestDir)
 
     data.plotPerformance()
+
+    data.plotGap()
+
     plt.show()
