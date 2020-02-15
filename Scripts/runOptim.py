@@ -11,10 +11,10 @@ from Parse_instance import dataFormat
 from Parse_instance import readOutput
 from Parse_instance import displaySolution
 
-instanceName = 'captANOR225_9_20'
+#instanceName = 'captANOR225_9_20'
 #instanceName = 'captGRID100_10_10'
 #instanceName = 'captANOR900_15_20'
-#instanceName = 'captANOR1500_21_500'
+instanceName = 'captANOR1500_15_100'
 instanceDir = '../Instances/'
 instancePath = instanceDir + instanceName + '.dat'
 
@@ -24,7 +24,7 @@ oplModelPath = oplDir + oplModel + '.mod'
 modelType = 'full'
 
 Rcapt = 1
-Rcom = 1
+Rcom = 2
 
 # parse data
 Acapt, Acom, NeighCapt, NeighCom = parserInstance.parseData(

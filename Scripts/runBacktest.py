@@ -47,5 +47,3 @@ for instanceName in instances:
 
     # move output file
     shutil.move(oplDir+'output.dat', templateSave.format(instanceName))
-
-    break
