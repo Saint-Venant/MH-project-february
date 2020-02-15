@@ -10,3 +10,5 @@ __pycache__/
 
 /Scripts/*.dat
 /Scripts/backtest_full12/
+
+/Pictures/

@@ -37,9 +37,8 @@ minimize sum(i in targets) select[i];
 subject to {
   ctCover: forall(i in targets) sum(j in NeighCapt[i] : j > 0) select[j] >= 1;
   
-  ctFlowCirculation1: forall(<e, i, 0, M> in edges) f[<e>] <= M*select[i];
-  ctFlowCirculation2: forall(<e, i, j, M> in edges : j > 0) f[<e>] <= M*select[i];
-  ctFlowCirculation3: forall(<e, i, j, M> in edges : j > 0) f[<e>] <= M*select[j];
+  ctFlowCirculation1: forall(<e, i, j, M> in edges) f[<e>] <= M*select[i];
+  ctFlowCirculation2: forall(<e, i, j, M> in edges : j > 0) f[<e>] <= M*select[j];
   
   ctFlowConservation: forall(i in targets) sum(<e, i, j, M> in edges) f[<e>] - sum(<e, j, i, M> in edges) f[<e>] == select[i];
 }

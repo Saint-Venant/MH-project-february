@@ -44,7 +44,7 @@ def display(instancePath, Rcapt, Rcom, solution, score):
     title = '{}\nRcapt = {} ; Rcom = {}\nScore = {}'
     plt.title(title.format(instancePath, Rcapt, Rcom, score))
     plt.xlabel('x coordinate')
-    plt.ylabel('y coordinates')
+    plt.ylabel('y coordinate')
 
 
 if __name__ == '__main__':
