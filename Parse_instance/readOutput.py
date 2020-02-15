@@ -3,6 +3,7 @@ import numpy as np
 
 class OutputFile:
     def __init__(self, outputFileName='output.dat', outputDir='./'):
+        self.fileName = outputFileName
         self.file = outputDir + outputFileName
         
         self.status = -1

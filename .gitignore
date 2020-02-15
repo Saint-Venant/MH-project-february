@@ -9,4 +9,4 @@ __pycache__/
 /Parse_instance/*.dat
 
 /Scripts/*.dat
-/Scripts/backtest_full_12/
+/Scripts/backtest_full12/
