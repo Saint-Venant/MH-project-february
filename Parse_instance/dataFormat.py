@@ -27,7 +27,7 @@ class DataFormat:
         txt = setName + ' = {'
         for t in s:
             # t: tuple
-            txt += '< '
+            txt += '<'
             for x in t:
                 txt += '{}, '.format(x)
             txt = txt[:-2] + '>, '
@@ -154,8 +154,8 @@ if __name__ == '__main__':
     Rcapt = 1
     Rcom = 2
     #instanceName = 'captGRID100_10_10'
-    #instanceName = 'captANOR225_9_20'
-    instanceName = 'captANOR1500_15_100'
+    instanceName = 'captANOR225_9_20'
+    #instanceName = 'captANOR1500_15_100'
     instanceDir = '../Instances/{}.dat'.format(instanceName)
 
     # model

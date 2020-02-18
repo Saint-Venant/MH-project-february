@@ -5,6 +5,7 @@
 /Instances/
 
 __pycache__/
+*.pyc
 
 /Parse_instance/*.dat
 
@@ -12,3 +13,6 @@ __pycache__/
 /Scripts/backtest_full12/
 
 /Pictures/
+
+/src/main
+/src/*.dat
