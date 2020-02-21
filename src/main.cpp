@@ -27,10 +27,48 @@ int nbEdges;
 int M = 100;
 
 int nbIters = 1000;
-int timeLimit = 180;
+int timeLimit = 300;
 float eps = 0.00001;
 bool verbose = false;
 int method = 2;
+
+struct MasterVariables {
+  MasterVariables(IloEnv& env) {
+    x = IloNumVarArray(env, n, 0, 1);
+  }
+  IloNumVarArray x;
+};
+
+struct MasterSolution {
+  MasterSolution(IloEnv& env) {
+    xSolution = IloNumArray(env, n);
+  }
+  IloNum valueSolution;
+  IloNumArray xSolution;
+};
+
+struct BendersVariables {
+  BendersVariables(IloEnv& envBenders) {
+    u = IloNumVarArray(envBenders, nbEdges, 0, INT_MAX);
+    v = IloNumVarArray(envBenders, nbEdges, 0, INT_MAX);
+    w = IloNumVarArray(envBenders, n, 0, INT_MAX);
+  }
+  IloNumVarArray u;
+  IloNumVarArray v;
+  IloNumVarArray w;
+};
+
+struct BendersSolution {
+  BendersSolution(IloEnv& env) {
+    uSolution = IloNumArray(env, nbEdges);
+    vSolution = IloNumArray(env, nbEdges);
+    wSolution = IloNumArray(env, n);
+  }
+  IloNum bendersSolution;
+  IloNumArray uSolution;
+  IloNumArray vSolution;
+  IloNumArray wSolution;
+};
 
 Edge readEdge(string entity) {
   int begin;
@@ -182,8 +220,9 @@ void setData(string instanceName) {
   }
 }
 
-template <typename T>
-void setModel(IloEnv& env, IloModel& model, T& x) {
+void setModel(IloEnv& env, IloModel& model, MasterVariables& masterVar) {
+  IloNumVarArray x = masterVar.x;
+
   // objective function
   IloExpr exprObj(env);
   for (int i=1; i<n; i++) {
@@ -208,27 +247,29 @@ void setModel(IloEnv& env, IloModel& model, T& x) {
   }
 }
 
-template <typename T>
-void getSolution(IloNum& valueSolution, IloNumArray& xSolution, T& x, IloCplex& cplex) {
-  valueSolution = cplex.getObjValue();
+void getSolution(MasterSolution& masterSol, MasterVariables& masterVar, IloCplex& cplex) {
+  masterSol.valueSolution = cplex.getObjValue();
   for (int i=1; i<n; i++) {
-    xSolution[i] = cplex.getValue(x[i]);
+    masterSol.xSolution[i] = cplex.getValue(masterVar.x[i]);
   }
 }
 
-void displaySolution(IloNum& valueSolution, IloNumArray& xSolution) {
+void displaySolution(MasterSolution& masterSol) {
   cout << endl << " ----- Master problem ----- " << endl << endl;
-  cout << "objective Master: " << valueSolution << endl;
+  cout << "objective Master: " << masterSol.valueSolution << endl;
   cout << endl << "Variables x_i" << endl;
   for (int i=1; i<n; i++) {
-    cout << "  * x_" << i << " -> " << xSolution[i] << endl;
+    cout << "  * x_" << i << " -> " << masterSol.xSolution[i] << endl;
   }
   cout << endl;
 }
 
-void setModelBenders(IloEnv& env1, IloModel& model1, IloNumVarArray& u, IloNumVarArray& v, IloNumVarArray& w,
-                     IloNumArray& xSolution) {
+void setModelBenders(IloEnv& env1, IloModel& model1, BendersVariables& bendersVar, MasterSolution& masterSol) {
   Edge e;
+  IloNumVarArray u = bendersVar.u;
+  IloNumVarArray v = bendersVar.v;
+  IloNumVarArray w = bendersVar.w;
+  IloNumArray xSolution = masterSol.xSolution;
 
   // objective function
   IloExpr exprObj(env1);
@@ -271,61 +312,61 @@ void setModelBenders(IloEnv& env1, IloModel& model1, IloNumVarArray& u, IloNumVa
   exprCtsum.end();
 }
 
-void getSolutionBenders(IloNum& bendersSolution, IloNumArray& uSolution, IloNumArray& vSolution, IloNumArray& wSolution,
-                        IloNumVarArray& u, IloNumVarArray& v, IloNumVarArray& w, IloCplex& cplex) {
-  bendersSolution = cplex.getObjValue();
-  cplex.getValues(uSolution, u);
+void getSolutionBenders(BendersSolution& bendersSol, BendersVariables& bendersVar, IloCplex& cplex) {
+  bendersSol.bendersSolution = cplex.getObjValue();
+  cplex.getValues(bendersSol.uSolution, bendersVar.u);
   for (int k=0; k<nbEdges; k++) {
     if (edges[k].j > 0) {
-      vSolution[k] = cplex.getValue(v[k]);
+      bendersSol.vSolution[k] = cplex.getValue(bendersVar.v[k]);
     }
   }
   for (int i=1; i<n; i++) {
-    wSolution[i] = cplex.getValue(w[i]);
+    bendersSol.wSolution[i] = cplex.getValue(bendersVar.w[i]);
   }
 }
 
-void displaySolutionBenders(IloNum& bendersSolution, IloNumArray& uSolution, IloNumArray& vSolution, IloNumArray& wSolution) {
-  cout << endl << "bendersSolution = " << bendersSolution << endl;
+void displaySolutionBenders(BendersSolution& bendersSol) {
+  cout << endl << "bendersSolution = " << bendersSol.bendersSolution << endl;
   for (int k=0; k<nbEdges; k++) {
-    cout << "uSolution_" << k << " = " << uSolution[k] << endl;
+    cout << "uSolution_" << k << " = " << bendersSol.uSolution[k] << endl;
   }
   for (int k=0; k<nbEdges; k++) {
     if (edges[k].j > 0) {
-      cout << "vSolution_" << k << " = " << vSolution[k] << endl;
+      cout << "vSolution_" << k << " = " << bendersSol.vSolution[k] << endl;
     }
   }
   for (int i=1; i<n; i++) {
-    cout << "wSolution_" << i << " = " << wSolution[i] << endl;
+    cout << "wSolution_" << i << " = " << bendersSol.wSolution[i] << endl;
   }
 }
 
-void solveSPBenders(IloNumArray& xSolution, IloNum& bendersSolution, IloNumArray& uSolution,
-                    IloNumArray& vSolution, IloNumArray& wSolution) {
+void solveSPBenders(MasterSolution& masterSol, BendersSolution& bendersSol) {
   IloEnv envBenders;
   IloModel modelBenders(envBenders);
 
   // Variables
-  IloNumVarArray u(envBenders, nbEdges, 0, INT_MAX);
-  IloNumVarArray v(envBenders, nbEdges, 0, INT_MAX);
-  IloNumVarArray w(envBenders, n, 0, INT_MAX);
+  BendersVariables bendersVar(envBenders);
 
-  setModelBenders(envBenders, modelBenders, u, v, w, xSolution);
+  setModelBenders(envBenders, modelBenders, bendersVar, masterSol);
 
   // Resolution
   IloCplex cplexBenders(modelBenders);
   cplexBenders.solve();
 
   // Results
-  getSolutionBenders(bendersSolution, uSolution, vSolution, wSolution, u, v, w, cplexBenders);
-  //displaySolutionBenders(bendersSolution, uSolution, vSolution, wSolution);
+  getSolutionBenders(bendersSol, bendersVar, cplexBenders);
+  //displaySolutionBenders(bendersSol);
 
   envBenders.end();
 }
 
-template <typename T>
-void addCutSPBenders(IloEnv& env, IloModel& model, T& x, IloNumArray& uSolution, IloNumArray& vSolution, IloNumArray& wSolution) {
+void addCutSPBenders(IloEnv& env, IloModel& model, MasterVariables& masterVar, BendersSolution& bendersSol) {
   Edge e;
+  IloNumArray uSolution = bendersSol.uSolution;
+  IloNumArray vSolution = bendersSol.vSolution;
+  IloNumArray wSolution = bendersSol.wSolution;
+  IloNumVarArray x = masterVar.x;
+
   IloExpr exprCtsum(env);
   for (int k=0; k<nbEdges; k++) {
     e = edges[k];
@@ -355,49 +396,49 @@ int main(int argc, char* argv[]){
   IloModel model(env);
 
   // Variables
-  IloNumVarArray x(env, n, 0, 1);
+  MasterVariables masterVar(env);
 
-  setModel(env, model, x);
+  setModel(env, model, masterVar);
 
   int step = 1;
   if (method == 1) {
-    model.add(IloConversion(env, x, ILOINT));
+    model.add(IloConversion(env, masterVar.x, ILOINT));
     step = 2;
   }
 
   // Resolution
   // --- master problem
-  IloNum valueSolution;
-  IloNumArray xSolution(env, n);
+  MasterSolution masterSol(env);
 
   // --- sub-problem Benders
-  IloNum bendersSolution;
-  IloNumArray uSolution(env, nbEdges);
-  IloNumArray vSolution(env, nbEdges);
-  IloNumArray wSolution(env, n);
+  BendersSolution bendersSol(env);
 
   bool cutAdded = true;
   int iteration = 0;
   int iterationsStep1 = 0;
   int iterationsStep2 = 0;
   time_t timer = time(NULL);
-  double dt = difftime(timer, timeBegin);
-  while ((cutAdded) && (iteration < nbIters) && (dt < timeLimit)) {
-    cutAdded = false;
-
+  double dt = timeLimit - difftime(timer, timeBegin);
+  while ((cutAdded) && (iteration < nbIters) && (dt > 0)) {
     // Master problem
     IloCplex cplex(model);
+    cplex.setParam(IloCplex::TiLim, dt);
     cplex.solve();
-    getSolution(valueSolution, xSolution, x, cplex);
-    //displaySolution(valueSolution, xSolution);
-    cout << "VALUE MASTER = " << valueSolution << endl << endl;
+    if (cplex.getStatus() != IloAlgorithm::Optimal) {
+      cout << "Could not find optimal solution" << endl;
+      break;
+    }
+    getSolution(masterSol, masterVar, cplex);
+    //displaySolution(masterSol);
+    cout << "VALUE MASTER = " << masterSol.valueSolution << endl << endl;
 
     // Solve sub-problem Benders
-    solveSPBenders(xSolution, bendersSolution, uSolution, vSolution, wSolution);
-    cout << "VALUE BENDERS = " << bendersSolution << endl << endl;
-    if (bendersSolution > eps) {
+    solveSPBenders(masterSol, bendersSol);
+    cout << "VALUE BENDERS = " << bendersSol.bendersSolution << endl << endl;
+    cutAdded = false;
+    if (bendersSol.bendersSolution > eps) {
       // add cut
-      addCutSPBenders(env, model, x, uSolution, vSolution, wSolution);
+      addCutSPBenders(env, model, masterVar, bendersSol);
       cutAdded = true;
     }
 
@@ -408,10 +449,10 @@ int main(int argc, char* argv[]){
       iterationsStep2 += 1;
     }
     timer = time(NULL);
-    dt = difftime(timer, timeBegin);
+    dt = timeLimit - difftime(timer, timeBegin);
 
     if (!cutAdded && (method == 2) && (step == 1)) {
-      model.add(IloConversion(env, x, ILOINT));
+      model.add(IloConversion(env, masterVar.x, ILOINT));
       cutAdded = true;
       step = 2;
     }
@@ -422,13 +463,13 @@ int main(int argc, char* argv[]){
     cout << ">> " << iteration << " iterations" << endl;
     cout << ">>   * " << iterationsStep1 << " continuous iterations" << endl;
     cout << ">>   * " << iterationsStep2 << " integer iterations" << endl;
-    cout << ">> inf bound : " << valueSolution << endl;
+    cout << ">> inf bound : " << masterSol.valueSolution << endl;
   } else {
     cout << endl << endl << "Optimal solution found !" << endl;
     cout << ">> " << iteration << " iterations" << endl;
     cout << ">>   * " << iterationsStep1 << " continuous iterations" << endl;
     cout << ">>   * " << iterationsStep2 << " integer iterations" << endl;
-    cout << ">> objective value : " << valueSolution << endl;
+    cout << ">> objective value : " << masterSol.valueSolution << endl;
   }
 
   env.end();
