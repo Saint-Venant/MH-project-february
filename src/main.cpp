@@ -10,6 +10,7 @@ using namespace std;
 
 struct Edge {
   Edge(int index, int i, int j, int M): index(index), i(i), j(j), M(M) {}
+  Edge(): index(-1), i(-1), j(-1), M(-1) {}
   int index;
   int i;
   int j;
@@ -20,10 +21,16 @@ struct Edge {
 std::vector<int> vertices;
 std::vector<int> targets;
 std::vector<Edge> edges;
+std::vector<std::vector<int>> NeighCapt;
+int n;
+int nbEdges;
+int M = 100;
 
 int nbIters = 1000;
 int timeLimit = 180;
 float eps = 0.00001;
+bool verbose = false;
+int method = 2;
 
 Edge readEdge(string entity) {
   int begin;
@@ -60,6 +67,29 @@ Edge readEdge(string entity) {
   return Edge(index, i, j, M);
 }
 
+std::vector<int> readSet(string line) {
+  std::vector<int> set;
+  int begin = 0;
+  int length = 0;
+  while (line.compare(begin+length, 1, "{") != 0) {
+    length += 1;
+  }
+  begin = begin + length + 1;
+  length = 1;
+  while (true) {
+    if (line.compare(begin+length, 1, ",") == 0) {
+      set.push_back(std::stoi(line.substr(begin, length)));
+      begin = begin + length + 2;
+    } else if (line.compare(begin+length, 1, "}") == 0) {
+      set.push_back(std::stoi(line.substr(begin, length)));
+      break;
+    } else {
+      length += 1;
+    }
+  }
+  return set;
+}
+
 void setData(string instanceName) {
   std::ifstream instanceFile;
   std::string line;
@@ -82,11 +112,15 @@ void setData(string instanceName) {
       vertices.push_back(std::stoi(entity.substr(0, entity.size()-1)));
     }
   }
-  cout << "Display vertices" << endl;
-  for (int i=0; i<vertices.size()-1; i++) {
-    cout << vertices[i] << " ";
+  n = vertices.size();
+  if (verbose) {
+    cout << "Display vertices" << endl;
+    cout << "n = " << n << endl;
+    for (unsigned int i=0; i<vertices.size()-1; i++) {
+      cout << vertices[i] << " ";
+    }
+    cout << vertices[vertices.size()-1] << endl << endl;
   }
-  cout << vertices[vertices.size()-1] << endl << endl;
 
   // read targets
   std::getline(instanceFile, line);
@@ -102,11 +136,13 @@ void setData(string instanceName) {
       targets.push_back(std::stoi(entity.substr(0, entity.size()-1)));
     }
   }
-  cout << "Display targets" << endl;
-  for (int i=0; i<targets.size()-1; i++) {
-    cout << targets[i] << " ";
+  if (verbose) {
+    cout << "Display targets" << endl;
+    for (unsigned int i=0; i<targets.size()-1; i++) {
+      cout << targets[i] << " ";
+    }
+    cout << targets[targets.size()-1] << endl << endl;
   }
-  cout << targets[targets.size()-1] << endl << endl;
 
   // read edges
   std::getline(instanceFile, line);
@@ -122,123 +158,188 @@ void setData(string instanceName) {
       edges.push_back(readEdge(entity));
     }
   }
+
+  nbEdges = edges.size();
+
+  // read NeighCapt
+  std::getline(instanceFile, line);
+  std::getline(instanceFile, line);
+  std::getline(instanceFile, line);
+  NeighCapt.push_back(readSet(line));
+  while (line.compare(line.size()-1, 1, ",") == 0) {
+    std::getline(instanceFile, line);
+    NeighCapt.push_back(readSet(line));
+  }
+  if (verbose) {
+    cout << "Display NeighCapt" << endl;
+    for (unsigned int i=0; i<NeighCapt.size(); i++) {
+      cout << "vertex " << i << " : ";
+      for (unsigned int j=0; j<NeighCapt[i].size(); j++) {
+        cout << NeighCapt[i][j] << " ";
+      }
+      cout << endl;
+    }
+  }
 }
-/*
+
 template <typename T>
-void setModel(IloEnv& env, IloModel& model, T& y) {
+void setModel(IloEnv& env, IloModel& model, T& x) {
   // objective function
   IloExpr exprObj(env);
-  for (int i=0; i<m; i++) {
-    exprObj += y[i];
+  for (int i=1; i<n; i++) {
+    exprObj += x[i];
   }
   IloObjective obj(env, exprObj, IloObjective::Minimize);
   model.add(obj);
   exprObj.end();
+
+  // cover constraint
+  for (int i=1; i<n; i++) {
+    IloExpr ctCover(env);
+    int k;
+    for (unsigned int j=0; j<NeighCapt[i].size(); j++) {
+      k = NeighCapt[i][j];
+      if (k > 0) {
+        ctCover += x[k];
+      }
+    }
+    model.add(ctCover >= 1);
+    ctCover.end();
+  }
 }
 
 template <typename T>
-void getSolution(IloNum& valueSolution, IloNumArray& ySolution, T& y, IloCplex& cplex) {
+void getSolution(IloNum& valueSolution, IloNumArray& xSolution, T& x, IloCplex& cplex) {
   valueSolution = cplex.getObjValue();
-  cplex.getValues(ySolution, y);
+  for (int i=1; i<n; i++) {
+    xSolution[i] = cplex.getValue(x[i]);
+  }
 }
 
-void displaySolution(IloNum& valueSolution, IloNumArray& ySolution) {
+void displaySolution(IloNum& valueSolution, IloNumArray& xSolution) {
   cout << endl << " ----- Master problem ----- " << endl << endl;
   cout << "objective Master: " << valueSolution << endl;
-  cout << endl << "Variables y_i" << endl;
-  for (int i=0; i<m; i++) {
-    cout << "  * y_" << i << " -> " << ySolution[i] << endl;
+  cout << endl << "Variables x_i" << endl;
+  for (int i=1; i<n; i++) {
+    cout << "  * x_" << i << " -> " << xSolution[i] << endl;
   }
   cout << endl;
 }
 
-void setModelBenders(IloEnv& env1, IloModel& model1, IloNumVarArray& v, IloNumVarArray& u, IloNumArray& ySolution) {
+void setModelBenders(IloEnv& env1, IloModel& model1, IloNumVarArray& u, IloNumVarArray& v, IloNumVarArray& w,
+                     IloNumArray& xSolution) {
+  Edge e;
+
   // objective function
   IloExpr exprObj(env1);
-  for (int j=0; j<m; j++) {
-    exprObj += -bnd*ySolution[j]*v[j];
+  for (int k=0; k<nbEdges; k++) {
+    e = edges[k];
+    exprObj += -M*xSolution[e.i]*u[k];
+    if (e.j > 0) {
+      exprObj += -M*xSolution[e.j]*v[k];
+    }
   }
-  for (int i=0; i<n; i++) {
-    exprObj += demand[i]*u[i];
+  for (int i=1; i<n; i++) {
+    exprObj += xSolution[i]*w[i];
   }
   IloObjective obj(env1, exprObj, IloObjective::Maximize);
   model1.add(obj);
   exprObj.end();
 
   // constraints
-  model1.add(u[0] == 0);
-  int s1;
-  int s2;
-  for (int j=0; j<m; j++) {
-    s1 = edges[0][j];
-    s2 = edges[1][j];
-    model1.add(-v[j] - u[s1] + u[s2] <= 0);
-    model1.add(-v[j] + u[s1] - u[s2] <= 0);
+  for (int k=0; k<nbEdges; k++) {
+    e = edges[k];
+    if (e.j > 0) {
+      model1.add(-u[k] - v[k] + w[e.i] - w[e.j] <= 0);
+    } else {
+      model1.add(-u[k] + w[e.i] <= 0);
+    }
   }
 
   IloExpr exprCtsum(env1);
-  for (int i=0; i<n; i++) {
-    exprCtsum += u[i];
+  for (int k=0; k<nbEdges; k++) {
+    e = edges[k];
+    exprCtsum += u[k];
+    if (e.j > 0) {
+      exprCtsum += v[k];
+    }
   }
-  for (int j=0; j<m; j++) {
-    exprCtsum += v[j];
+  for (int i=1; i<n; i++) {
+    exprCtsum += w[i];
   }
-  model1.add(exprCtsum == 1);
+  model1.add(exprCtsum <= 1);
   exprCtsum.end();
 }
 
-void getSolutionBenders(IloNum& bendersSolution, IloNumArray& vSolution, IloNumArray& uSolution,
-                        IloNumVarArray& v, IloNumVarArray& u, IloCplex& cplex) {
+void getSolutionBenders(IloNum& bendersSolution, IloNumArray& uSolution, IloNumArray& vSolution, IloNumArray& wSolution,
+                        IloNumVarArray& u, IloNumVarArray& v, IloNumVarArray& w, IloCplex& cplex) {
   bendersSolution = cplex.getObjValue();
-  cplex.getValues(vSolution, v);
   cplex.getValues(uSolution, u);
+  for (int k=0; k<nbEdges; k++) {
+    if (edges[k].j > 0) {
+      vSolution[k] = cplex.getValue(v[k]);
+    }
+  }
+  for (int i=1; i<n; i++) {
+    wSolution[i] = cplex.getValue(w[i]);
+  }
 }
 
-void displaySolutionBenders(IloNum& bendersSolution, IloNumArray& vSolution, IloNumArray& uSolution) {
+void displaySolutionBenders(IloNum& bendersSolution, IloNumArray& uSolution, IloNumArray& vSolution, IloNumArray& wSolution) {
   cout << endl << "bendersSolution = " << bendersSolution << endl;
-  for (int j=0; j<m; j++) {
-    cout << "vSolution_" << j << " = " << vSolution[j] << endl;
+  for (int k=0; k<nbEdges; k++) {
+    cout << "uSolution_" << k << " = " << uSolution[k] << endl;
   }
-  for (int i=0; i<n; i++) {
-    cout << "uSolution_" << i << " = " << uSolution[i] << endl;
+  for (int k=0; k<nbEdges; k++) {
+    if (edges[k].j > 0) {
+      cout << "vSolution_" << k << " = " << vSolution[k] << endl;
+    }
+  }
+  for (int i=1; i<n; i++) {
+    cout << "wSolution_" << i << " = " << wSolution[i] << endl;
   }
 }
 
-void solveSPBenders(IloNumArray& ySolution, IloNum& bendersSolution, IloNumArray& vSolution, IloNumArray& uSolution) {
+void solveSPBenders(IloNumArray& xSolution, IloNum& bendersSolution, IloNumArray& uSolution,
+                    IloNumArray& vSolution, IloNumArray& wSolution) {
   IloEnv envBenders;
   IloModel modelBenders(envBenders);
 
   // Variables
-  IloNumVarArray v(envBenders, m, 0, INT_MAX);
-  IloNumVarArray u(envBenders, n, 0, INT_MAX);
+  IloNumVarArray u(envBenders, nbEdges, 0, INT_MAX);
+  IloNumVarArray v(envBenders, nbEdges, 0, INT_MAX);
+  IloNumVarArray w(envBenders, n, 0, INT_MAX);
 
-  setModelBenders(envBenders, modelBenders, v, u, ySolution);
+  setModelBenders(envBenders, modelBenders, u, v, w, xSolution);
 
   // Resolution
   IloCplex cplexBenders(modelBenders);
   cplexBenders.solve();
 
   // Results
-  getSolutionBenders(bendersSolution, vSolution, uSolution, v, u, cplexBenders);
-  //displaySolutionBenders(bendersSolution, vSolution, uSolution);
+  getSolutionBenders(bendersSolution, uSolution, vSolution, wSolution, u, v, w, cplexBenders);
+  //displaySolutionBenders(bendersSolution, uSolution, vSolution, wSolution);
 
   envBenders.end();
-  //cplexBenders.end();
 }
 
 template <typename T>
-void addCutSPBenders(IloEnv& env, IloModel& model, T& y, IloNumArray& vSolution, IloNumArray& uSolution) {
+void addCutSPBenders(IloEnv& env, IloModel& model, T& x, IloNumArray& uSolution, IloNumArray& vSolution, IloNumArray& wSolution) {
+  Edge e;
   IloExpr exprCtsum(env);
-  for (int j=0; j<m; j++) {
-    exprCtsum += -bnd*y[j]*vSolution[j];
+  for (int k=0; k<nbEdges; k++) {
+    e = edges[k];
+    exprCtsum += -M*x[e.i]*uSolution[k];
+    if (e.j > 0) {
+      exprCtsum += -M*x[e.j]*vSolution[k];
+    }
   }
-  for (int i=0; i<n; i++) {
-    exprCtsum += demand[i]*uSolution[i];
+  for (int i=1; i<n; i++) {
+    exprCtsum += wSolution[i]*x[i];
   }
   model.add(exprCtsum <= 0);
   exprCtsum.end();
 }
-*/
 
 int main(int argc, char* argv[]){
   string instanceName = "";
@@ -250,28 +351,30 @@ int main(int argc, char* argv[]){
 
   IloEnv env;
   setData(instanceName);
-  /*
+
   IloModel model(env);
 
   // Variables
-  IloNumVarArray y(env, m, 0, INT_MAX);
+  IloNumVarArray x(env, n, 0, 1);
 
-  setModel(env, model, y);
+  setModel(env, model, x);
+
   int step = 1;
   if (method == 1) {
-    model.add(IloConversion(env, y, ILOINT));
+    model.add(IloConversion(env, x, ILOINT));
     step = 2;
   }
 
   // Resolution
   // --- master problem
   IloNum valueSolution;
-  IloNumArray ySolution(env, m);
+  IloNumArray xSolution(env, n);
 
   // --- sub-problem Benders
   IloNum bendersSolution;
-  IloNumArray vSolution(env, m);
-  IloNumArray uSolution(env, n);
+  IloNumArray uSolution(env, nbEdges);
+  IloNumArray vSolution(env, nbEdges);
+  IloNumArray wSolution(env, n);
 
   bool cutAdded = true;
   int iteration = 0;
@@ -285,14 +388,16 @@ int main(int argc, char* argv[]){
     // Master problem
     IloCplex cplex(model);
     cplex.solve();
-    getSolution(valueSolution, ySolution, y, cplex);
-    //displaySolution(valueSolution, ySolution);
+    getSolution(valueSolution, xSolution, x, cplex);
+    //displaySolution(valueSolution, xSolution);
+    cout << "VALUE MASTER = " << valueSolution << endl << endl;
 
     // Solve sub-problem Benders
-    solveSPBenders(ySolution, bendersSolution, vSolution, uSolution);
+    solveSPBenders(xSolution, bendersSolution, uSolution, vSolution, wSolution);
+    cout << "VALUE BENDERS = " << bendersSolution << endl << endl;
     if (bendersSolution > eps) {
       // add cut
-      addCutSPBenders(env, model, y, vSolution, uSolution);
+      addCutSPBenders(env, model, x, uSolution, vSolution, wSolution);
       cutAdded = true;
     }
 
@@ -304,10 +409,9 @@ int main(int argc, char* argv[]){
     }
     timer = time(NULL);
     dt = difftime(timer, timeBegin);
-    //cplex.end();
 
     if (!cutAdded && (method == 2) && (step == 1)) {
-      model.add(IloConversion(env, y, ILOINT));
+      model.add(IloConversion(env, x, ILOINT));
       cutAdded = true;
       step = 2;
     }
@@ -327,7 +431,7 @@ int main(int argc, char* argv[]){
     cout << ">> objective value : " << valueSolution << endl;
   }
 
-  env.end();*/
+  env.end();
 
   return 0;
 }
