@@ -400,12 +400,12 @@ void saveResults(string outputPath, string status, MasterSolution& masterSol, in
   outputFile << "select = [";
   if (status == "optimal") {
     for (int i=1; i<n-1; i++) {
-      outputFile << masterSol.xSolution[i] << ", ";
+      outputFile << masterSol.xSolution[i] << " ";
     }
     outputFile << masterSol.xSolution[n-1] << "];" << endl << endl;
   } else {
     for (int i=1; i<n-1; i++) {
-      outputFile << "0, ";
+      outputFile << "0 ";
     }
     outputFile << "0];" << endl << endl;
   }

@@ -19,7 +19,7 @@ instanceDir = '../Instances/'
 instancePath = instanceDir + instanceName + '.dat'
 
 # algo = 'branch_and_bound_OPL' or 'cutting_planes'
-algo = 'branch_and_bound_OPL'
+algo = 'cutting_planes'
 
 if algo == 'branch_and_bound_OPL':
     optimDir = '../OPL_flow/'
@@ -45,19 +45,32 @@ M = 100
 oplInstanceFile = dataFormat.writeData(
     instanceName, NeighCapt, NeighCom, M, \
     modelType=modelType, dataDir=optimDir)
-'''
-# run OPL for optim
-os.system('oplrun.exe {} {}'.format(oplModelPath, oplInstanceFile))
+
+if algo == 'branch_and_bound_OPL':
+    # run OPL for optim
+    os.system('oplrun.exe {} {}'.format(oplModelPath, oplInstanceFile))
+elif algo == 'cutting_planes':
+    # run C++ executable
+    os.system('{} -instancePath {}'.format(cppPath, oplInstanceFile))
 
 # delete file instance
 os.remove(oplInstanceFile)
 
-# move output file
-shutil.move(oplDir+'output.dat', 'output.dat')
+if algo == 'branch_and_bound_OPL':
+    # move output file
+    shutil.move(oplDir+'output.dat', 'output.dat')
 
 # read output
 output = readOutput.OutputFile(algo)
 solution = np.array([1] + output.select)
-score = output.bestInteger
-displaySolution.display(instancePath, Rcapt, Rcom, solution, score)
-plt.show()'''
+if output.isOpt():
+    if algo == 'branch_and_bound_OPL':
+        score = output.bestInteger
+        displaySolution.display(instancePath, Rcapt, Rcom, solution, score)
+        plt.show()
+    elif algo == 'cutting_planes':
+        score = output.infBound
+        displaySolution.display(instancePath, Rcapt, Rcom, solution, score)
+        plt.savefig('solution.png')
+else:
+    print('No integer solution found in the given time')

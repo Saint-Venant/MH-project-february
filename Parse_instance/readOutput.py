@@ -98,6 +98,12 @@ class OutputFile:
         print('select = ', self.select, '\n')
         print('solving time = ', self.solvingTime)
 
+    def isOpt(self):
+        if self.algo == 'branch_and_bound_OPL':
+            return (self.status == 1)
+        elif self.algo == 'cutting_planes':
+            return (self.status == 'optimal')
+
 
 
 
