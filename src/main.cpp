@@ -45,6 +45,7 @@ struct MasterSolution {
   }
   IloNum valueSolution;
   IloNumArray xSolution;
+  std::vector<float> values;
 };
 
 struct BendersVariables {
@@ -128,13 +129,13 @@ std::vector<int> readSet(string line) {
   return set;
 }
 
-void setData(string instanceName) {
+void setData(string instancePath) {
   std::ifstream instanceFile;
   std::string line;
   std::stringstream strLine;
   std::string entity;
 
-  instanceFile = std::ifstream(instanceName.c_str());
+  instanceFile = std::ifstream(instancePath.c_str());
   if (!instanceFile.is_open()) throw std::runtime_error("No instance file found");
 
   // read vertices
@@ -249,6 +250,7 @@ void setModel(IloEnv& env, IloModel& model, MasterVariables& masterVar) {
 
 void getSolution(MasterSolution& masterSol, MasterVariables& masterVar, IloCplex& cplex) {
   masterSol.valueSolution = cplex.getObjValue();
+  masterSol.values.push_back(masterSol.valueSolution);
   for (int i=1; i<n; i++) {
     masterSol.xSolution[i] = cplex.getValue(masterVar.x[i]);
   }
@@ -387,28 +389,33 @@ void addCutSPBenders(IloEnv& env, IloModel& model, MasterVariables& masterVar, B
   exprCtsum.end();
 }
 
-void saveResults(string outputPath, string status, float infBound, int iterationsStep1, int iterationsStep2,
+void saveResults(string outputPath, string status, MasterSolution& masterSol, int iterationsStep1, int iterationsStep2,
                  int solvingTime) {
   std::ofstream outputFile;
   outputFile.open(outputPath.c_str());
   outputFile << "status = " << status << ";" << endl << endl;
-  outputFile << "inf bound = " << infBound << ";" << endl << endl;
+  outputFile << "inf bound = " << masterSol.valueSolution << ";" << endl << endl;
   outputFile << "nb continuous iterations = " << iterationsStep1 << ";" << endl << endl;
   outputFile << "nb integer iterations = " << iterationsStep2 << ";" << endl << endl;
+  outputFile << "sequence of lower bounds = {";
+  for (unsigned int i=0; i<masterSol.values.size(); i++) {
+    outputFile << masterSol.values[i] << ", ";
+  }
+  outputFile << masterSol.values[masterSol.values.size()-1] << "};" << endl << endl;
   outputFile << "solving time = " << solvingTime << ";" << endl << endl;
   outputFile.close();
 }
 
 int main(int argc, char* argv[]){
-  string instanceName = "";
+  string instancePath = "";
   for (int i = 0; i < argc; i++){
-      if (string(argv[i]).compare("-instanceName") == 0)
-          instanceName = argv[i + 1];
+      if (string(argv[i]).compare("-instancePath") == 0)
+          instancePath = argv[i + 1];
   }
   time_t timeBegin = time(NULL);
 
   IloEnv env;
-  setData(instanceName);
+  setData(instancePath);
 
   IloModel model(env);
 
@@ -501,7 +508,7 @@ int main(int argc, char* argv[]){
   // export results
   int solvingTime = difftime(timer, timeBegin);
   string outputPath = "output.dat";
-  saveResults(outputPath, status, masterSol.valueSolution, iterationsStep1, iterationsStep2, solvingTime);
+  saveResults(outputPath, status, masterSol, iterationsStep1, iterationsStep2, solvingTime);
 
   env.end();
 
