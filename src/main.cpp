@@ -340,7 +340,7 @@ void displaySolutionBenders(BendersSolution& bendersSol) {
   }
 }
 
-void solveSPBenders(MasterSolution& masterSol, BendersSolution& bendersSol) {
+bool solveSPBenders(MasterSolution& masterSol, BendersSolution& bendersSol, double dt) {
   IloEnv envBenders;
   IloModel modelBenders(envBenders);
 
@@ -351,13 +351,18 @@ void solveSPBenders(MasterSolution& masterSol, BendersSolution& bendersSol) {
 
   // Resolution
   IloCplex cplexBenders(modelBenders);
+  cplexBenders.setParam(IloCplex::TiLim, dt);
   cplexBenders.solve();
+  bool foundOpt = (cplexBenders.getStatus() == IloAlgorithm::Optimal);
 
-  // Results
-  getSolutionBenders(bendersSol, bendersVar, cplexBenders);
-  //displaySolutionBenders(bendersSol);
+  if (foundOpt) {
+    // Results
+    getSolutionBenders(bendersSol, bendersVar, cplexBenders);
+    //displaySolutionBenders(bendersSol);
+  }
 
   envBenders.end();
+  return foundOpt;
 }
 
 void addCutSPBenders(IloEnv& env, IloModel& model, MasterVariables& masterVar, BendersSolution& bendersSol) {
@@ -380,6 +385,18 @@ void addCutSPBenders(IloEnv& env, IloModel& model, MasterVariables& masterVar, B
   }
   model.add(exprCtsum <= 0);
   exprCtsum.end();
+}
+
+void saveResults(string outputPath, string status, float infBound, int iterationsStep1, int iterationsStep2,
+                 int solvingTime) {
+  std::ofstream outputFile;
+  outputFile.open(outputPath.c_str());
+  outputFile << "status = " << status << ";" << endl << endl;
+  outputFile << "inf bound = " << infBound << ";" << endl << endl;
+  outputFile << "nb continuous iterations = " << iterationsStep1 << ";" << endl << endl;
+  outputFile << "nb integer iterations = " << iterationsStep2 << ";" << endl << endl;
+  outputFile << "solving time = " << solvingTime << ";" << endl << endl;
+  outputFile.close();
 }
 
 int main(int argc, char* argv[]){
@@ -432,8 +449,20 @@ int main(int argc, char* argv[]){
     //displaySolution(masterSol);
     cout << "VALUE MASTER = " << masterSol.valueSolution << endl << endl;
 
+    iteration += 1;
+    if (step == 1) {
+      iterationsStep1 += 1;
+    } else {
+      iterationsStep2 += 1;
+    }
+    timer = time(NULL);
+    dt = timeLimit - difftime(timer, timeBegin);
+
     // Solve sub-problem Benders
-    solveSPBenders(masterSol, bendersSol);
+    if (!solveSPBenders(masterSol, bendersSol, dt)) {
+      cout << "Could not find optimal solution for benders sub-problem" << endl;
+      break;
+    }
     cout << "VALUE BENDERS = " << bendersSol.bendersSolution << endl << endl;
     cutAdded = false;
     if (bendersSol.bendersSolution > eps) {
@@ -442,12 +471,6 @@ int main(int argc, char* argv[]){
       cutAdded = true;
     }
 
-    iteration += 1;
-    if (step == 1) {
-      iterationsStep1 += 1;
-    } else {
-      iterationsStep2 += 1;
-    }
     timer = time(NULL);
     dt = timeLimit - difftime(timer, timeBegin);
 
@@ -458,19 +481,27 @@ int main(int argc, char* argv[]){
     }
   }
 
+  string status;
   if (cutAdded) {
+    status = "lowerBound";
     cout << endl << endl << "No solution found !" << endl;
     cout << ">> " << iteration << " iterations" << endl;
     cout << ">>   * " << iterationsStep1 << " continuous iterations" << endl;
     cout << ">>   * " << iterationsStep2 << " integer iterations" << endl;
     cout << ">> inf bound : " << masterSol.valueSolution << endl;
   } else {
+    status = "optimal";
     cout << endl << endl << "Optimal solution found !" << endl;
     cout << ">> " << iteration << " iterations" << endl;
     cout << ">>   * " << iterationsStep1 << " continuous iterations" << endl;
     cout << ">>   * " << iterationsStep2 << " integer iterations" << endl;
     cout << ">> objective value : " << masterSol.valueSolution << endl;
   }
+
+  // export results
+  int solvingTime = difftime(timer, timeBegin);
+  string outputPath = "output.dat";
+  saveResults(outputPath, status, masterSol.valueSolution, iterationsStep1, iterationsStep2, solvingTime);
 
   env.end();
 
