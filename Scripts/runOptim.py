@@ -22,13 +22,13 @@ instancePath = instanceDir + instanceName + '.dat'
 algo = 'branch_and_bound_OPL'
 
 if algo == 'branch_and_bound_OPL':
-    oplDir = '../OPL_flow/'
+    optimDir = '../OPL_flow/'
     oplModel = 'february_flow_linear'
-    oplModelPath = oplDir + oplModel + '.mod'
+    oplModelPath = optimDir + oplModel + '.mod'
 elif algo == 'cutting_planes':
-    srcDir = '../src/'
+    optimDir = '../src/'
     cppModel = 'main'
-    cppPath = srcDir + cppModel
+    cppPath = optimDir + cppModel
 modelType = 'full'
 
 Rcapt = 1
@@ -44,8 +44,8 @@ M = 100
 # build a file instance
 oplInstanceFile = dataFormat.writeData(
     instanceName, NeighCapt, NeighCom, M, \
-    modelType=modelType, dataDir=oplDir)
-
+    modelType=modelType, dataDir=optimDir)
+'''
 # run OPL for optim
 os.system('oplrun.exe {} {}'.format(oplModelPath, oplInstanceFile))
 
@@ -60,4 +60,4 @@ output = readOutput.OutputFile(algo)
 solution = np.array([1] + output.select)
 score = output.bestInteger
 displaySolution.display(instancePath, Rcapt, Rcom, solution, score)
-plt.show()
+plt.show()'''
