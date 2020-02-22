@@ -10,13 +10,19 @@ from Parse_instance import parserInstance
 from Parse_instance import dataFormat
 
 instanceDir = '../Instances/'
+algo = 'cutting_planes'
 
-oplDir = '../OPL_flow/'
-oplModel = 'february_flow_linear'
-oplModelPath = oplDir + oplModel + '.mod'
+if algo == 'branch_and_bound_OPL':
+    optimDir = '../OPL_flow/'
+    oplModel = 'february_flow_linear'
+    oplModelPath = oplDir + oplModel + '.mod'
+elif algo == 'cutting_planes':
+    optimDir = '../src/'
+    cppModel = 'main'
+    cppPath = optimDir + cppModel
 modelType = 'full'
 
-backtestDir = './backtest_full_12/'
+backtestDir = './backtest_cutting_planes12/'
 templateSave = backtestDir + 'RESULTS_{}.dat'
 
 Rcapt = 1
@@ -36,14 +42,21 @@ for instanceName in instances:
     # build a file instance
     oplInstanceFile = dataFormat.writeData(
         instanceName, NeighCapt, NeighCom, M, \
-        modelType=modelType, dataDir=oplDir
+        modelType=modelType, dataDir=optimDir
     )
 
-    # run OPL for optim
-    os.system('oplrun.exe {} {}'.format(oplModelPath, oplInstanceFile))
+    if algo == 'branch_and_bound_OPL':
+        # run OPL for optim
+        os.system('oplrun.exe {} {}'.format(oplModelPath, oplInstanceFile))
+    elif algo == 'cutting_planes':
+        # run C++ executable
+        os.system('{} -instancePath {}'.format(cppPath, oplInstanceFile))
 
     # delete file instance
     os.remove(oplInstanceFile)
 
     # move output file
-    shutil.move(oplDir+'output.dat', templateSave.format(instanceName))
+    if algo == 'branch_and_bound_OPL':
+        shutil.move(optimDir+'output.dat', templateSave.format(instanceName))
+    elif algo == 'cutting_planes':
+        shutil.move('output.dat', templateSave.format(instanceName))

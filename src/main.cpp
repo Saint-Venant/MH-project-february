@@ -410,7 +410,7 @@ void saveResults(string outputPath, string status, MasterSolution& masterSol, in
     outputFile << "0];" << endl << endl;
   }
   outputFile << "sequence of lower bounds = {";
-  for (unsigned int i=0; i<masterSol.values.size(); i++) {
+  for (unsigned int i=0; i<masterSol.values.size()-1; i++) {
     outputFile << masterSol.values[i] << ", ";
   }
   outputFile << masterSol.values[masterSol.values.size()-1] << "};" << endl << endl;
@@ -424,7 +424,6 @@ int main(int argc, char* argv[]){
       if (string(argv[i]).compare("-instancePath") == 0)
           instancePath = argv[i + 1];
   }
-  time_t timeBegin = time(NULL);
 
   IloEnv env;
   setData(instancePath);
@@ -453,6 +452,7 @@ int main(int argc, char* argv[]){
   int iteration = 0;
   int iterationsStep1 = 0;
   int iterationsStep2 = 0;
+  time_t timeBegin = time(NULL);
   time_t timer = time(NULL);
   double dt = timeLimit - difftime(timer, timeBegin);
   while ((cutAdded) && (iteration < nbIters) && (dt > 0)) {
@@ -518,6 +518,7 @@ int main(int argc, char* argv[]){
   }
 
   // export results
+  timer = time(NULL);
   int solvingTime = difftime(timer, timeBegin);
   string outputPath = "output.dat";
   saveResults(outputPath, status, masterSol, iterationsStep1, iterationsStep2, solvingTime);
