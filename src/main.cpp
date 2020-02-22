@@ -397,6 +397,18 @@ void saveResults(string outputPath, string status, MasterSolution& masterSol, in
   outputFile << "inf bound = " << masterSol.valueSolution << ";" << endl << endl;
   outputFile << "nb continuous iterations = " << iterationsStep1 << ";" << endl << endl;
   outputFile << "nb integer iterations = " << iterationsStep2 << ";" << endl << endl;
+  outputFile << "select = [";
+  if (status == "optimal") {
+    for (int i=1; i<n-1; i++) {
+      outputFile << masterSol.xSolution[i] << ", ";
+    }
+    outputFile << masterSol.xSolution[n-1] << "];" << endl << endl;
+  } else {
+    for (int i=1; i<n-1; i++) {
+      outputFile << "0, ";
+    }
+    outputFile << "0];" << endl << endl;
+  }
   outputFile << "sequence of lower bounds = {";
   for (unsigned int i=0; i<masterSol.values.size(); i++) {
     outputFile << masterSol.values[i] << ", ";
