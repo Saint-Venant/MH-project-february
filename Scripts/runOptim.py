@@ -18,9 +18,17 @@ instanceName = 'captANOR225_9_20'
 instanceDir = '../Instances/'
 instancePath = instanceDir + instanceName + '.dat'
 
-oplDir = '../OPL_flow/'
-oplModel = 'february_flow_linear'
-oplModelPath = oplDir + oplModel + '.mod'
+# algo = 'branch_and_bound_OPL' or 'cutting_planes'
+algo = 'branch_and_bound_OPL'
+
+if algo == 'branch_and_bound_OPL':
+    oplDir = '../OPL_flow/'
+    oplModel = 'february_flow_linear'
+    oplModelPath = oplDir + oplModel + '.mod'
+elif algo == 'cutting_planes':
+    srcDir = '../src/'
+    cppModel = 'main'
+    cppPath = srcDir + cppModel
 modelType = 'full'
 
 Rcapt = 1
@@ -48,7 +56,7 @@ os.remove(oplInstanceFile)
 shutil.move(oplDir+'output.dat', 'output.dat')
 
 # read output
-output = readOutput.OutputFile()
+output = readOutput.OutputFile(algo)
 solution = np.array([1] + output.select)
 score = output.bestInteger
 displaySolution.display(instancePath, Rcapt, Rcom, solution, score)
