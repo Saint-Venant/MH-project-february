@@ -75,8 +75,11 @@ class OutputFile:
         self.select = select
         sequence = []
         for elem in content[10].split(' = ')[1].split(' '):
-            if elem[0] == '{':
-                sequence.append(float(elem[1:-1]))
+            if (elem[0] == '{'):
+                if '}' not in elem:
+                    sequence.append(float(elem[1:-1]))
+                else:
+                    sequence.append(float(elem[1:-3]))
             elif '}' in elem:
                 sequence.append(float(elem[:-3]))
             else:
