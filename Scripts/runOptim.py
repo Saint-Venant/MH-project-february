@@ -26,8 +26,8 @@ if algo == 'branch_and_bound_OPL':
     oplModel = 'february_flow_linear'
     oplModelPath = optimDir + oplModel + '.mod'
 elif algo == 'cutting_planes':
-    optimDir = '../src/'
-    cppModel = 'main'
+    optimDir = '../cutting_planes/bin/'
+    cppModel = 'cutting_planes'
     cppPath = optimDir + cppModel
 modelType = 'full'
 
