@@ -12,6 +12,7 @@ __pycache__/
 /Scripts/*.dat
 /Scripts/backtest_full12/
 /Scripts/backtest_cutting_planes12/
+/Scripts/backtest_full11/
 
 /cutting_planes/Debug/
 /cutting_planes/bin/

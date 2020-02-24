@@ -10,23 +10,24 @@ from Parse_instance import parserInstance
 from Parse_instance import dataFormat
 
 instanceDir = '../Instances/'
-algo = 'cutting_planes'
+#algo = 'cutting_planes'
+algo = 'branch_and_bound_OPL'
 
 if algo == 'branch_and_bound_OPL':
     optimDir = '../OPL_flow/'
     oplModel = 'february_flow_linear'
-    oplModelPath = oplDir + oplModel + '.mod'
+    oplModelPath = optimDir + oplModel + '.mod'
 elif algo == 'cutting_planes':
     optimDir = '../cutting_planes/bin/'
     cppModel = 'cutting_planes'
     cppPath = optimDir + cppModel
 modelType = 'full'
 
-backtestDir = './backtest_cutting_planes12/'
+backtestDir = './backtest_full11/'
 templateSave = backtestDir + 'RESULTS_{}.dat'
 
 Rcapt = 1
-Rcom = 2
+Rcom = 1
 
 instances = [x.split('.dat')[0] for x in os.listdir(instanceDir) if '.dat' in x]
 
