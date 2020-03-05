@@ -353,7 +353,8 @@ bool solveSPBenders(MasterSolution& masterSol, BendersSolution& bendersSol, doub
 
   // Resolution
   IloCplex cplexBenders(modelBenders);
-  cplexBenders.setParam(IloCplex::TiLim, dt);
+  //cplexBenders.setParam(IloCplex::TiLim, dt);
+  cplexBenders.setParam(IloCplex::NumParam(CPX_PARAM_TILIM), dt);
   cplexBenders.solve();
   bool foundOpt = (cplexBenders.getStatus() == IloAlgorithm::Optimal);
 
@@ -458,7 +459,8 @@ int main(int argc, char* argv[]){
   while ((cutAdded) && (iteration < nbIters) && (dt > 0)) {
     // Master problem
     IloCplex cplex(model);
-    cplex.setParam(IloCplex::TiLim, dt);
+    //cplex.setParam(IloCplex::TiLim, dt);
+    cplex.setParam(IloCplex::NumParam(CPX_PARAM_TILIM), dt);
     cplex.solve();
     if (cplex.getStatus() != IloAlgorithm::Optimal) {
       cout << "Could not find optimal solution" << endl;

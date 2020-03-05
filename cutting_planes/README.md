@@ -15,7 +15,7 @@
   * The path to your CPLEX installation must be such that `</path/to/ilog>/cplex/include/ilcplex/cplex.h` exists.
   * If your compiler is in a non-standard location, you can use `-DCMAKE_CXX_COMPILER=</path/to/compiler>`.
   * Change `Debug` into `Release` if you want to compile in release mode.
-  * Here, `</path/to/ilog>` = `/opt/ibm/ILOG/CPLEX_Studio125/`
+  * Here, `</path/to/ilog>` = `/opt/ibm/ILOG/CPLEX_Studio1210/`
 * Run make: `make`.
 * Run the executable: `./cutting_planes`.
 
